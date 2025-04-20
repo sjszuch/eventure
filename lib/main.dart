@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/eventure_feed.dart';
+import 'pages/eventure_feed.dart'; // Make sure this path is correct
 import 'pages/create_post_start.dart';
 
 void main() {
@@ -17,7 +17,7 @@ class EventureApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: EventureHome(),
+      home: EventureHome(), // this class must be in eventure_feed.dart
       routes: {'/create': (context) => CreatePostStart()},
     );
   }

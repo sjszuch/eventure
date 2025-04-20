@@ -1,32 +1,15 @@
-// lib/widgets/flippable_event_card.dart
 import 'dart:math';
+import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:confetti/confetti.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:add_2_calendar/add_2_calendar.dart';
+import '../services/saved_events_service.dart';
 
 class FlippableEventCard extends StatefulWidget {
-  final String imageUrl;
-  final String title;
-  final String author;
-  final String description;
-  final String date;
-  final String location;
-  final bool initiallySaved;
-  final void Function(bool)? onSaveChanged;
+  final Map<String, String> event;
 
-  const FlippableEventCard({
-    required this.imageUrl,
-    required this.title,
-    required this.author,
-    required this.description,
-    required this.date,
-    required this.location,
-    this.initiallySaved = false,
-    this.onSaveChanged,
-    Key? key,
-  }) : super(key: key);
+  const FlippableEventCard({Key? key, required this.event}) : super(key: key);
 
   @override
   State<FlippableEventCard> createState() => _FlippableEventCardState();
@@ -37,7 +20,8 @@ class _FlippableEventCardState extends State<FlippableEventCard>
   late AnimationController _controller;
   late ConfettiController _confettiController;
   bool isSaved = false;
-  double _dragStartValue = 0.0;
+
+  final savedService = SavedEventsService();
 
   @override
   void initState() {
@@ -48,7 +32,7 @@ class _FlippableEventCardState extends State<FlippableEventCard>
       value: 0,
     );
     _confettiController = ConfettiController(duration: Duration(seconds: 1));
-    isSaved = widget.initiallySaved;
+    isSaved = savedService.isSaved(widget.event);
   }
 
   @override
@@ -68,25 +52,35 @@ class _FlippableEventCardState extends State<FlippableEventCard>
     }
   }
 
+  void _handleDragStart(DragStartDetails details) {}
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    final delta = details.primaryDelta ?? 0;
+    final dragAmount = delta / context.size!.width;
+    _controller.value = (_controller.value - dragAmount).clamp(0.0, 1.0);
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    _toggleCard();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final angle = pi * _controller.value;
+    final isBack = _controller.value >= 0.5;
+
+    final transform =
+        Matrix4.identity()
+          ..setEntry(3, 2, 0.001)
+          ..rotateY(angle);
+
     return GestureDetector(
       onTap: _toggleCard,
-      onHorizontalDragUpdate: (details) {
-        final delta = details.primaryDelta ?? 0;
-        final dragAmount = delta / context.size!.width;
-        _controller.value = (_controller.value - dragAmount).clamp(0.0, 1.0);
-      },
-      onHorizontalDragEnd: (_) => _toggleCard(),
+      onHorizontalDragUpdate: _handleDragUpdate,
+      onHorizontalDragEnd: _handleDragEnd,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
-          final angle = pi * _controller.value;
-          final isBack = _controller.value >= 0.5;
-          final transform =
-              Matrix4.identity()
-                ..setEntry(3, 2, 0.001)
-                ..rotateY(angle);
           return Transform(
             transform: transform,
             alignment: Alignment.center,
@@ -112,7 +106,7 @@ class _FlippableEventCardState extends State<FlippableEventCard>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(widget.imageUrl, fit: BoxFit.cover),
+            Image.network(widget.event['image']!, fit: BoxFit.cover),
             Positioned(
               bottom: 16,
               left: 16,
@@ -121,7 +115,7 @@ class _FlippableEventCardState extends State<FlippableEventCard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.title,
+                    widget.event['title']!,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -131,7 +125,7 @@ class _FlippableEventCardState extends State<FlippableEventCard>
                   ),
                   SizedBox(height: 4),
                   Text(
-                    widget.author,
+                    widget.event['author']!,
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
@@ -155,23 +149,23 @@ class _FlippableEventCardState extends State<FlippableEventCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.title,
+                widget.event['title']!,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 6),
               Text(
-                widget.date,
+                '${widget.event['date']} @ ${widget.event['time']}',
                 style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
               Text(
-                widget.location,
+                widget.event['location'] ?? 'Event Location',
                 style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
               SizedBox(height: 12),
               Expanded(
                 child: SingleChildScrollView(
                   child: Text(
-                    widget.description,
+                    widget.event['description']!,
                     style: TextStyle(fontSize: 16, height: 1.4),
                     textAlign: TextAlign.left,
                   ),
@@ -179,7 +173,7 @@ class _FlippableEventCardState extends State<FlippableEventCard>
               ),
               SizedBox(height: 10),
               Text(
-                "- ${widget.author}",
+                "- ${widget.event['author']}",
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
                   color: Colors.black54,
@@ -209,9 +203,15 @@ class _FlippableEventCardState extends State<FlippableEventCard>
                             color: Colors.white,
                           ),
                           onPressed: () {
-                            setState(() => isSaved = !isSaved);
-                            if (isSaved) _confettiController.play();
-                            widget.onSaveChanged?.call(isSaved);
+                            setState(() {
+                              isSaved = !isSaved;
+                              if (isSaved) {
+                                savedService.save(widget.event);
+                                _confettiController.play();
+                              } else {
+                                savedService.unsave(widget.event);
+                              }
+                            });
                           },
                         ),
                       ),
@@ -224,7 +224,8 @@ class _FlippableEventCardState extends State<FlippableEventCard>
                       icon: Icon(Icons.share, color: Colors.white),
                       onPressed: () {
                         Share.share(
-                          "Check out this event: ${widget.title}\nLink: https://eventure.app/event/123",
+                          '''Check out this event: ${widget.event['title']}
+Link: https://eventure.app/event/123''',
                         );
                       },
                     ),
@@ -236,9 +237,10 @@ class _FlippableEventCardState extends State<FlippableEventCard>
                       icon: Icon(Icons.calendar_today, color: Colors.white),
                       onPressed: () {
                         final event = Event(
-                          title: widget.title,
-                          description: widget.description,
-                          location: widget.location,
+                          title: widget.event['title']!,
+                          description: widget.event['description']!,
+                          location:
+                              widget.event['location'] ?? 'Event Location',
                           startDate: DateTime.now(),
                           endDate: DateTime.now().add(Duration(hours: 2)),
                         );

@@ -3,6 +3,7 @@ import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/saved_events_service.dart';
+import '../widgets/flippable_event_card.dart';
 
 class SavedPostsPage extends StatefulWidget {
   @override
@@ -86,7 +87,8 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                               icon: Icon(Icons.share),
                               onPressed: () {
                                 Share.share(
-                                  'Check out this event: ${event['title']}\nLink: https://eventure.app/event/123',
+                                  'Check out this event: ${event['title']}\n' +
+                                      'Link: https://eventure.app/event/123',
                                 );
                               },
                             ),
@@ -113,62 +115,7 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                         onTap: () {},
                         child: AspectRatio(
                           aspectRatio: 9 / 16,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Container(
-                              color: Color(0xFFFFF8E1),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.network(
-                                    selectedEvent!['image']!,
-                                    height: 300,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          selectedEvent!['title']!,
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: 6),
-                                        Text(
-                                          '${selectedEvent!['date']} @ ${selectedEvent!['time']}',
-                                        ),
-                                        SizedBox(height: 6),
-                                        Text(
-                                          'Highland Park',
-                                          style: TextStyle(
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                        SizedBox(height: 12),
-                                        Text(
-                                          selectedEvent!['description']!,
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                        SizedBox(height: 10),
-                                        Text(
-                                          '- ${selectedEvent!['author']}',
-                                          style: TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          child: FlippableEventCard(event: selectedEvent!),
                         ),
                       ),
                       Positioned(
