@@ -60,6 +60,9 @@ dev_dependencies:
   flutter_svg: ^2.0.17
   http: ^1.1.0
   flutter_google_places_sdk: ^0.4.1
+  cloud_firestore: ^4.8.2
+  firebase_core: ^2.25.4
+  firebase_storage: ^11.6.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

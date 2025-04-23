@@ -1,196 +1,103 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:confetti/confetti.dart';
-import 'dart:math';
 
-class CreatePostPreview extends StatefulWidget {
-  final Map<String, String> eventData;
-  final File imageFile;
-  final VoidCallback onEdit;
-  final VoidCallback onConfirm;
+class CreatePostPreview extends StatelessWidget {
+  final File? imageFile;
+  final String? title;
+  final String? description;
+  final String? location;
+  final String? audience;
+  final DateTime? date;
+  final TimeOfDay? time;
+  final String? author;
+  final VoidCallback? onEdit;
 
-  CreatePostPreview({
-    required this.eventData,
-    required this.imageFile,
-    required this.onEdit,
-    required this.onConfirm,
-  });
-
-  @override
-  _CreatePostPreviewState createState() => _CreatePostPreviewState();
-}
-
-class _CreatePostPreviewState extends State<CreatePostPreview>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late ConfettiController _confettiController;
-  bool _isFlipped = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: Duration(milliseconds: 400),
-      vsync: this,
-    );
-    _confettiController = ConfettiController(duration: Duration(seconds: 1));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _confettiController.dispose();
-    super.dispose();
-  }
-
-  void _toggleFlip() {
-    if (_isFlipped) {
-      _controller.reverse();
-    } else {
-      _controller.forward();
-    }
-    setState(() {
-      _isFlipped = !_isFlipped;
-    });
-  }
-
-  void _confirmPost() {
-    _confettiController.play();
-    Future.delayed(Duration(seconds: 2), () {
-      widget.onConfirm();
-    });
-  }
+  const CreatePostPreview({
+    Key? key,
+    this.imageFile,
+    this.title,
+    this.description,
+    this.location,
+    this.audience,
+    this.date,
+    this.time,
+    this.author,
+    this.onEdit,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final angle = _controller.value * pi;
-    final isBack = _controller.value >= 0.5;
     return Scaffold(
-      appBar: AppBar(title: Text('Preview'), automaticallyImplyLeading: false),
-      body: Center(
+      appBar: AppBar(
+        title: const Text('Preview Event'),
+        actions: [IconButton(icon: const Icon(Icons.edit), onPressed: onEdit)],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: _toggleFlip,
-                child: AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    final transform =
-                        Matrix4.identity()
-                          ..setEntry(3, 2, 0.001)
-                          ..rotateY(angle);
-                    return Transform(
-                      transform: transform,
-                      alignment: Alignment.center,
-                      child:
-                          isBack ? _buildBack(context) : _buildFront(context),
-                    );
-                  },
+            if (imageFile != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.file(
+                  imageFile!,
+                  width: double.infinity,
+                  height: 400,
+                  fit: BoxFit.cover,
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                height: 400,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(child: Text('No image selected')),
+              ),
+            const SizedBox(height: 16),
+            if (title != null)
+              Text(
+                title!,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: widget.onEdit,
-                    style: ElevatedButton.styleFrom(
-                      shape: CircleBorder(),
-                      padding: EdgeInsets.all(20),
-                    ),
-                    child: Icon(Icons.edit),
-                  ),
-                  SizedBox(width: 20),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ConfettiWidget(
-                        confettiController: _confettiController,
-                        blastDirection: -pi / 2,
-                        emissionFrequency: 0.6,
-                        numberOfParticles: 20,
-                        maxBlastForce: 10,
-                        minBlastForce: 5,
-                        shouldLoop: false,
-                      ),
-                      ElevatedButton(
-                        onPressed: _confirmPost,
-                        style: ElevatedButton.styleFrom(
-                          shape: CircleBorder(),
-                          padding: EdgeInsets.all(20),
-                        ),
-                        child: Icon(Icons.check),
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 8),
+            if (description != null)
+              Text(description!, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            if (location != null)
+              Text('Location: $location', style: const TextStyle(fontSize: 16)),
+            if (audience != null)
+              Text('Audience: $audience', style: const TextStyle(fontSize: 16)),
+            if (date != null)
+              Text(
+                'Date: ${date!.toLocal().toString().split(' ')[0]}',
+                style: const TextStyle(fontSize: 16),
               ),
-            ),
+            if (time != null)
+              Text(
+                'Time: ${time!.format(context)}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            if (author != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  '- $author',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFront(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: Image.file(
-        widget.imageFile,
-        key: ValueKey(widget.imageFile.path),
-        width: 300,
-        height: 500,
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-
-  Widget _buildBack(BuildContext context) {
-    return Container(
-      width: 300,
-      height: 500,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Color(0xFFFFF8E1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.eventData['title'] ?? '',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 6),
-          Text(
-            "${widget.eventData['date']} @ ${widget.eventData['time']}",
-            style: TextStyle(fontSize: 16, color: Colors.black54),
-          ),
-          Text(
-            widget.eventData['location'] ?? '',
-            style: TextStyle(fontSize: 16, color: Colors.black54),
-          ),
-          SizedBox(height: 12),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Text(
-                widget.eventData['description'] ?? '',
-                style: TextStyle(fontSize: 16, height: 1.4),
-              ),
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            "- ${widget.eventData['author'] ?? ''}",
-            style: TextStyle(
-              fontStyle: FontStyle.italic,
-              color: Colors.black54,
-            ),
-          ),
-        ],
       ),
     );
   }

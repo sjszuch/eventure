@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
@@ -74,7 +73,8 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                                 final e = Event(
                                   title: event['title']!,
                                   description: event['description']!,
-                                  location: 'Event Location',
+                                  location:
+                                      event['location'] ?? 'Event Location',
                                   startDate: DateTime.now(),
                                   endDate: DateTime.now().add(
                                     Duration(hours: 2),
@@ -87,8 +87,8 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                               icon: Icon(Icons.share),
                               onPressed: () {
                                 Share.share(
-                                  'Check out this event: ${event['title']}\n' +
-                                      'Link: https://eventure.app/event/123',
+                                  '''Check out this event: ${event['title']}
+Link: https://eventure.app/event/123''',
                                 );
                               },
                             ),
@@ -112,15 +112,18 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                   child: Stack(
                     children: [
                       GestureDetector(
-                        onTap: () {},
-                        child: AspectRatio(
-                          aspectRatio: 9 / 16,
-                          child: FlippableEventCard(event: selectedEvent!),
+                        onTap: () {}, // prevent tap propagation
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: FlippableEventCard(
+                            key: ValueKey(selectedEvent!['image']),
+                            event: selectedEvent!,
+                          ),
                         ),
                       ),
                       Positioned(
-                        top: 10,
-                        right: 10,
+                        top: 30,
+                        right: 30,
                         child: GestureDetector(
                           onTap: _closeFlyer,
                           child: CircleAvatar(

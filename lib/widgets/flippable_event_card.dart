@@ -19,9 +19,9 @@ class _FlippableEventCardState extends State<FlippableEventCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late ConfettiController _confettiController;
-  bool isSaved = false;
-
   final savedService = SavedEventsService();
+  bool isSaved = false;
+  double dragStartX = 0.0;
 
   @override
   void initState() {
@@ -42,8 +42,8 @@ class _FlippableEventCardState extends State<FlippableEventCard>
     super.dispose();
   }
 
-  void _toggleCard() {
-    final shouldFlipForward = _controller.value < 0.5;
+  void _toggleCard({bool? flipForward}) {
+    final shouldFlipForward = flipForward ?? (_controller.value < 0.5);
     HapticFeedback.mediumImpact();
     if (shouldFlipForward) {
       _controller.forward();
@@ -52,35 +52,36 @@ class _FlippableEventCardState extends State<FlippableEventCard>
     }
   }
 
-  void _handleDragStart(DragStartDetails details) {}
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    final delta = details.primaryDelta ?? 0;
-    final dragAmount = delta / context.size!.width;
-    _controller.value = (_controller.value - dragAmount).clamp(0.0, 1.0);
+  void _handleDragStart(DragStartDetails details) {
+    dragStartX = details.globalPosition.dx;
   }
 
   void _handleDragEnd(DragEndDetails details) {
-    _toggleCard();
+    final dragEndX = details.velocity.pixelsPerSecond.dx;
+    final velocityThreshold = 300;
+    final isSwipeRight = dragEndX > velocityThreshold;
+    final isSwipeLeft = dragEndX < -velocityThreshold;
+
+    if (isSwipeLeft || isSwipeRight) {
+      _toggleCard();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final angle = pi * _controller.value;
-    final isBack = _controller.value >= 0.5;
-
-    final transform =
-        Matrix4.identity()
-          ..setEntry(3, 2, 0.001)
-          ..rotateY(angle);
-
     return GestureDetector(
       onTap: _toggleCard,
-      onHorizontalDragUpdate: _handleDragUpdate,
+      onHorizontalDragStart: _handleDragStart,
       onHorizontalDragEnd: _handleDragEnd,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
+          final angle = pi * _controller.value;
+          final isBack = _controller.value >= 0.5;
+          final transform =
+              Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(angle);
           return Transform(
             transform: transform,
             alignment: Alignment.center,
@@ -154,11 +155,11 @@ class _FlippableEventCardState extends State<FlippableEventCard>
               ),
               SizedBox(height: 6),
               Text(
-                '${widget.event['date']} @ ${widget.event['time']}',
+                "${widget.event['date']} @ ${widget.event['time']}",
                 style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
               Text(
-                widget.event['location'] ?? 'Event Location',
+                widget.event['location']!,
                 style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
               SizedBox(height: 12),
@@ -173,7 +174,7 @@ class _FlippableEventCardState extends State<FlippableEventCard>
               ),
               SizedBox(height: 10),
               Text(
-                "- ${widget.event['author']}",
+                "- ${widget.event['author']!}",
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
                   color: Colors.black54,
@@ -239,8 +240,7 @@ Link: https://eventure.app/event/123''',
                         final event = Event(
                           title: widget.event['title']!,
                           description: widget.event['description']!,
-                          location:
-                              widget.event['location'] ?? 'Event Location',
+                          location: widget.event['location']!,
                           startDate: DateTime.now(),
                           endDate: DateTime.now().add(Duration(hours: 2)),
                         );

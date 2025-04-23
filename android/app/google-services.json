@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "62559891821",
+    "project_id": "eventure-db",
+    "storage_bucket": "eventure-db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:62559891821:android:34ca22285d8fb265c6aa64",
+        "android_client_info": {
+          "package_name": "com.example.eventure"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2W1dwk_1QNBqRi0YxuszC7YRRBM1TfTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
